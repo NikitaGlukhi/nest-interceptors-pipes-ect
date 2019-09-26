@@ -23,6 +23,7 @@ import { ResponseInterceptor } from './response.interceptor';
 
 @Controller('examples')
 @UseGuards(ExampleGuard)
+@UseInterceptors(ResponseInterceptor)
 export class AppController {
 
   constructor() {}
@@ -31,7 +32,7 @@ export class AppController {
   @UseInterceptors(ExampleInterceptor)
   @UseFilters(new HttpExceptionFilter())
   aetAll(@Query('testParam', new TransformPipe()) query, @Res() res) {
-    res.json(new ExampleException());
+    return query;
   }
 
   @Get('middleware')
