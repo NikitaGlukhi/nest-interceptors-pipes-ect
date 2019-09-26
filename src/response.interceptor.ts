@@ -1,24 +1,25 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    next.handle().subscribe(res => {
-      if (res.indexOf('HelloWorld') < 0) {
-        console.log(`\n Strange response at: { route: ${context.switchToHttp().getRequest().url}, method: ${context.switchToHttp().getRequest().route.stack[0].method.toUpperCase()} } \n`)
-      }
-    });
+  counter = 0;
 
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle()
       .pipe(
-        map(data => (context.switchToHttp().getResponse().json({ success: true, msg: 'OK', data, error: [] })))
-    );
+        tap(data => {
+          this.counter++;
+          const res = context.switchToHttp().getResponse();
+          const req = context.switchToHttp().getRequest();
+
+          if (typeof data !== 'object' || data.indexOf('HelloWorld') < 0) {
+            console.log(`\n Strange response at: { route: ${req.url}, response: ${JSON.stringify(data)}, method: ${req.route.stack[0].method.toUpperCase()} } \n`);
+          }
+
+          return res.json({ success: true, msg: 'OK', data, error: [], counter: this.counter });
+        }),
+      );
   }
 }
